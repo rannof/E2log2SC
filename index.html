@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+    <meta charset='utf-8'>
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <meta name="description" content="E2log2sc : Convert ElarmS E2 module stdout log to SeisComP3 event xml.">
+
+    <link rel="stylesheet" type="text/css" media="screen" href="stylesheets/stylesheet.css">
+
+    <title>E2log2sc</title>
+  </head>
+
+  <body>
+
+    <!-- HEADER -->
+    <div id="header_wrap" class="outer">
+        <header class="inner">
+          <a id="forkme_banner" href="https://github.com/rannof/E2log2SC">View on GitHub</a>
+
+          <h1 id="project_title">E2log2sc</h1>
+          <h2 id="project_tagline">Convert ElarmS E2 module stdout log to SeisComP3 event xml.</h2>
+
+            <section id="downloads">
+              <a class="zip_download_link" href="https://github.com/rannof/E2log2SC/zipball/master">Download this project as a .zip file</a>
+              <a class="tar_download_link" href="https://github.com/rannof/E2log2SC/tarball/master">Download this project as a tar.gz file</a>
+            </section>
+        </header>
+    </div>
+
+    <!-- MAIN CONTENT -->
+    <div id="main_content_wrap" class="outer">
+      <section id="main_content" class="inner">
+        <h1>
+<a id="e2log2sc" class="anchor" href="#e2log2sc" aria-hidden="true"><span class="octicon octicon-link"></span></a>E2log2SC</h1>
+
+<h3>
+<a id="convert-elarms-e2-module-stdout-log-to-seiscomp3-event-xml" class="anchor" href="#convert-elarms-e2-module-stdout-log-to-seiscomp3-event-xml" aria-hidden="true"><span class="octicon octicon-link"></span></a>Convert ElarmS E2 module stdout log to SeisComP3 event xml.</h3>
+
+<p>Created by Ran Novitsky Nof (<a href="http://ran.rnof.info">http://ran.rnof.info</a>), 2015 @ BSL</p>
+
+<h4>
+<a id="dependencies" class="anchor" href="#dependencies" aria-hidden="true"><span class="octicon octicon-link"></span></a>DEPENDENCIES:</h4>
+
+<p>Python modules:</p>
+
+<ul>
+<li>argparse</li>
+<li>sys</li>
+<li>os</li>
+<li>re</li>
+<li>seiscomp3 (IO,DataModel,Core)</li>
+</ul>
+
+<h4>
+<a id="usage" class="anchor" href="#usage" aria-hidden="true"><span class="octicon octicon-link"></span></a>USAGE:</h4>
+
+<pre>
+E2log2SC.py [-h] [-o OutXML] [-i InXML [InXML ...]]
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -o OutXML             Output xml file (Seiscomp3), Use - for stdout
+  -i InXML [InXML ...]  input E2 log file(s) (ElarmS).
+</pre>
+
+<p>Seiscomp3 xml can be fed to Seicomp3 database using scdb.<br>
+<em>Examples:</em></p>
+
+<pre><code>   E2log2SC.py -i events_20150214.log -o SCXML  
+   scdb -i SCXML -d mysql://sysop:sysop@localhost/seiscomp3
+</code></pre>
+
+<p>or:</p>
+
+<pre><code>   cat [ELARMSXMLFILE] | E2log2SC.py | scdb -i - -d mysql://sysop:sysop@localhost/seiscomp3  
+</code></pre>
+
+<p>or:</p>
+
+<pre><code>   E2log2SC.py -i events_*.log | scdb -i - -d mysql://sysop:sysop@localhost/seiscomp3  
+</code></pre>
+
+<h4>
+<a id="license" class="anchor" href="#license" aria-hidden="true"><span class="octicon octicon-link"></span></a>LICENSE:</h4>
+
+<pre><code>Copyright (C) by Ran Novitsky Nof                                            
+
+E2log2SC.py is free software: you can redistribute it and/or modify              
+it under the terms of the GNU Lesser General Public License as published by  
+the Free Software Foundation, either version 3 of the License, or            
+(at your option) any later version.                                          
+
+This program is distributed in the hope that it will be useful,              
+but WITHOUT ANY WARRANTY; without even the implied warranty of               
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the                
+GNU Lesser General Public License for more details.                          
+
+You should have received a copy of the GNU Lesser General Public License     
+along with this program.  If not, see &lt;http://www.gnu.org/licenses/&gt;. 
+</code></pre>
+
+<h1></h1>
+
+<blockquote>
+<blockquote>
+<blockquote>
+<blockquote>
+<blockquote>
+<blockquote>
+<blockquote>
+<p>d26cd1951ebb408ec4c25a887014e3a16fa8dc40</p>
+</blockquote>
+</blockquote>
+</blockquote>
+</blockquote>
+</blockquote>
+</blockquote>
+</blockquote>
+      </section>
+    </div>
+
+    <!-- FOOTER  -->
+    <div id="footer_wrap" class="outer">
+      <footer class="inner">
+        <p class="copyright">E2log2sc maintained by <a href="https://github.com/rannof">rannof</a></p>
+        <p>Published with <a href="https://pages.github.com">GitHub Pages</a></p>
+      </footer>
+    </div>
+
+    
+
+  </body>
+</html>
