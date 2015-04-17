@@ -36,7 +36,6 @@ import seiscomp3.IO as scio
 import seiscomp3.DataModel as scdatamodel
 import seiscomp3.Core as sccore
 
-
 # command line parser
 def is_valid_outfile(parser, arg):
     if arg=='-':
@@ -114,8 +113,8 @@ class E2LogParser(object):
       if int(Eid) > 0:# if event has a positive id number
         self.addEvent(Eid,origins=[self._origin]) #add origin to event
     if 'E:I:T: ' in line: # Trigger
-      #E:I:T:H: eventid ver update order sta chan net loc lat lon trigger_time log_taup taup_snr log_pd pd_snr log_pv pv_snr pa pa_snr assoc tpmag utpm pdmag updm uch ukm upd ups utp uts distkm azimuth
-      timeStamp,Eid,ver,update,order,sta,chn,net,loc,lat,lon,trigger_time,log_taup,taup_snr,log_pd,pd_snr,log_pv,pv_snr,pa,pa_snr,assoc,tpmag,utpm,pdmag,updm,uch,ukm,upd,ups,utp,uts,distkm,azimuth = line.strip().split()# parse line
+      #E:I:T:H: eventid ver update order sta chan net loc lat lon trigger_time log_taup taup_snr log_pd pd_snr log_pv pv_snr pa pa_snr assoc tpmag utpm pdmag updm uch ukm upd ups utp uts distkm azimuth [tterr plen sps toffset arrtime protime fndtime quetime sndtime e2time buftime alert]
+      timeStamp,Eid,ver,update,order,sta,chn,net,loc,lat,lon,trigger_time,log_taup,taup_snr,log_pd,pd_snr,log_pv,pv_snr,pa,pa_snr,assoc,tpmag,utpm,pdmag,updm,uch,ukm,upd,ups,utp,uts,distkm,azimuth = line.strip().split()[:33]# parse line
       pTime = sccore.Time()
       pTime.fromString(trigger_time,'%Y-%m-%dT%H:%M:%S.%f') # get pick time
       if loc=='--': loc = '' # adjust location format
@@ -202,7 +201,7 @@ class E2LogParser(object):
   def copyMag(self,originPID):
     if self._origin.magnitudeCount():
       mag = scdatamodel.Magnitude.Cast(self._origin.magnitude(0).clone())
-      mag.setPublicID(originPID+'#netMag.M')
+      mag.setPublicID(OriginPID+'#netMag.M')
     return mag
 
   def copyArrivals(self):
