@@ -1,5 +1,4 @@
 # E2log2SC
-<<<<<<< HEAD
 ### Convert ElarmS E2 module stdout log to SeisComP3 event xml.
 Created by Ran Novitsky Nof (http://ran.rnof.info), 2015 @ BSL
 #### DEPENDENCIES:
@@ -53,4 +52,3 @@ You should have received a copy of the GNU Lesser General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>. 
 ```
 =======
->>>>>>> d26cd1951ebb408ec4c25a887014e3a16fa8dc40
