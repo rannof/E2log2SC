@@ -201,7 +201,7 @@ class E2LogParser(object):
   def copyMag(self,originPID):
     if self._origin.magnitudeCount():
       mag = scdatamodel.Magnitude.Cast(self._origin.magnitude(0).clone())
-      mag.setPublicID(OriginPID+'#netMag.M')
+      mag.setPublicID(originPID+'#netMag.M')
     return mag
 
   def copyArrivals(self):
