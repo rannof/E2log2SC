@@ -303,4 +303,5 @@ if __name__=='__main__':
   # parse the arguments
   args = parser.parse_args(sys.argv[1:])
   E2 = E2LogParser(args.o)
+  if not type(args.i) is list: args.i = [args.i]
   E2.parseFiles(args.i)
