@@ -64,6 +64,13 @@ AUTHOR='E2'
 def km2deg(km):
   return km/111.13291490135191
 
+def deg2km(deg):
+  return deg*111.13291490135191
+
+
+def waveID2ID(waveformID):
+  return '.'.join([waveformID.networkCode(),waveformID.stationCode(),waveformID.locationCode(),waveformID.channelCode()])
+
 class E2LogParser(object):
   def __init__(self,xmlOut):
     self.ar = scio.XMLArchive() # seiscomp xml creator
@@ -89,6 +96,7 @@ class E2LogParser(object):
 
   def parseFiles(self,filelist):
     for f in filelist:
+      print >> sys.stderr,'Processing: %s'%(f.name)
       for line in f.readlines():
   #      try:
         if re.search('.*E:I:[TF ][: ] ',line): self.parseLogLine(line)
@@ -96,7 +104,6 @@ class E2LogParser(object):
   #        print line
   #        sys.exit(str(E))
       f.close()
-    self.write()
 
   def parseLogLine(self,line):
     'convert log lines to sc3 objects'
@@ -122,6 +129,10 @@ class E2LogParser(object):
       creationTime.fromString(trigger_time.split('T')[0]+'T'+timeStamp.split("|")[0],'%Y-%m-%dT%H:%M:%S.%f') # get creation time
       pick = self.addPick(pTime,net,sta,loc,chn,azimuth,distkm,latency=0,creationTime=creationTime) # add pick
       self.addArrival(self._origin,pick.publicID(),azimuth,distkm) # add arrival to current origin
+      amp = self.addAmplitude(ampval=log_pd, amptype='log_pd', snr=pd_snr, pickid=pick.publicID(), timeref=pTime, starttime=0, endtime=update, creationTime=creationTime)
+      self.addStationMagnitude(self._origin,magval=pdmag,amp=amp,weight=1)
+      amp = self.addAmplitude(ampval=log_taup, amptype='log_taup', snr=taup_snr, pickid=pick.publicID(), timeref=pTime, starttime=0, endtime=update, creationTime=creationTime)
+      self.addStationMagnitude(self._origin,magval=tpmag,amp=amp,weight=0)
 
   def addCreationInfo(self,parent=None,creationTime=None,agencyID=AGENCYID,author=AUTHOR,modificationTime=None):
     if not creationTime: creationTime = sccore.Time.GMT()
@@ -148,7 +159,10 @@ class E2LogParser(object):
     origin.setTime(scdatamodel.TimeQuantity(ot))
     origin.time().setUncertainty(otu)
     origin.setEvaluationMode(1)
-    if int(reported): origin.setEvaluationStatus(scdatamodel.REPORTED)
+    if int(reported):
+      origin.setEvaluationStatus(scdatamodel.REPORTED)
+    else:
+      origin.setEvaluationStatus(scdatamodel.PRELIMINARY)
     self.addCreationInfo(origin,creationTime=creationTime,agencyID=AGENCYID,author=AUTHOR)
     self.addMagnitude(origin,magval=mag,magu=magu,creationTime=creationTime)
     return origin
@@ -259,8 +273,9 @@ class E2LogParser(object):
       if new: event.setPreferredOriginID(origin.publicID())
       if origin.magnitudeCount():
         magid = origin.magnitude(origin.magnitudeCount()-1).publicID()
-        event.setPreferredMagnitudeID(magid)
-        event.setPreferredOriginID(origin.publicID())
+        if not self.eparams.findOrigin(event.preferredOriginID()).evaluationStatus()==scdatamodel.REPORTED:
+          event.setPreferredMagnitudeID(magid)
+          event.setPreferredOriginID(origin.publicID())
     if not int(Eid)<0: self.eparams.add(event)
 
   def addPick(self,pTime,net,sta,loc,chn,azimuth=0,distkm=0,latency=0,creationTime=None,agencyID=AGENCYID,author=AUTHOR):
@@ -298,6 +313,85 @@ class E2LogParser(object):
     parent.add(arrival)
     return arrival
 
+  def addAmplitude(self,ampval,amptype,snr,pickid,timeref,starttime,endtime,creationTime=None,agencyID=AGENCYID,author=AUTHOR):
+    ampval,snr,starttime,endtime = float(ampval),float(snr),float(starttime),float(endtime)
+    if not creationTime: creationTime=sccore.Time.GMT()
+    amp = scdatamodel.Amplitude(pickid+'.'+amptype)
+    amp.setType(amptype)
+    amp.setAmplitude(scdatamodel.RealQuantity(ampval))
+    amp.setTimeWindow(scdatamodel.TimeWindow(timeref,starttime,endtime))
+    amp.setSnr(snr)
+    amp.setPickID(pickid)
+    amp.setWaveformID(self.eparams.findPick(pickid).waveformID())
+    self.addCreationInfo(amp, creationTime, agencyID, author)
+    self.eparams.add(amp)
+    return amp
+
+  def addStationMagnitude(self,parent,magval,amp,weight=1,creationTime=None,agencyID=AGENCYID,author=AUTHOR):
+    magval = float(magval)
+    if not creationTime: creationTime=sccore.Time.GMT()
+    net = amp.waveformID().networkCode()
+    sta = amp.waveformID().stationCode()
+    mag = scdatamodel.StationMagnitude(parent.publicID()+'#staMag.'+amp.type()+'#'+net+'.'+sta)
+    mag.setMagnitude(scdatamodel.RealQuantity(magval))
+    mag.setType(amp.type())
+    mag.setAmplitudeID(amp.publicID())
+    mag.setWaveformID(amp.waveformID())
+    self.addCreationInfo(mag, creationTime, agencyID, author)
+    parent.add(mag)
+    contrib = scdatamodel.StationMagnitudeContribution(mag.publicID(),0,weight)
+    parent.magnitude(0).add(contrib)
+
+  def loadxml(self,infile):
+    if not self.ar.open(infile):
+      print >> sys.stderr,"Can't load file %s"%infile
+      return
+    self.eparams = self.eparams.Cast(self.ar.readObject())
+    return self.eparams
+
+  def getFirstReported(self):
+    forigins = []
+    events = []
+    for e in [self.eparams.event(i) for i in xrange(self.eparams.eventCount())]:
+      for originRef in [e.originReference(i) for i in xrange(e.originReferenceCount())]:
+        origin = self.eparams.findOrigin(originRef.originID())
+        try:
+          if origin.evaluationStatus()==scdatamodel.REPORTED:
+            events.append(e)
+            forigins.append(origin)
+            break
+          else:
+            continue
+        except:
+          continue
+    return events,forigins
+
+  def getESM(self,Eid,Oid=None):
+    'get Event Eid station magnitudes of originID Oid or first reported origin'
+    e = self.eparams.findEvent(Eid)
+    forigin=None
+    retval = {Eid:{}}
+    if not Oid:
+      for originRef in [e.originReference(i) for i in xrange(e.originReferenceCount())]:
+        origin = self.eparams.findOrigin(originRef.originID())
+        try:
+          if origin.evaluationStatus()==scdatamodel.REPORTED:
+            forigin = origin
+            break
+          else:
+            continue
+        except:
+          continue
+    else:
+      if Oid>e.originReferenceCount(): return retval
+      forigin = self.eparams.findOrigin(e.originReference(i).originID())
+    if not forigin: return retval
+    mag = forigin.magnitude(0)
+    stamags = [mag.stationMagnitudeContribution(i).stationMagnitudeID() for i in xrange(mag.stationMagnitudeContributionCount()) if mag.stationMagnitudeContribution(i).weight()==1]
+    mags = [forigin.findStationMagnitude(sm) for sm in stamags]
+    [retval[Eid].update({waveID2ID(mag.waveformID()):[mag.magnitude().value(),self.eparams.findAmplitude(mag.amplitudeID()).snr()]}) for mag in mags]
+    return retval
+
 
 if __name__=='__main__':
   # parse the arguments
@@ -305,3 +399,4 @@ if __name__=='__main__':
   E2 = E2LogParser(args.o)
   if not type(args.i) is list: args.i = [args.i]
   E2.parseFiles(args.i)
+  E2.write()
